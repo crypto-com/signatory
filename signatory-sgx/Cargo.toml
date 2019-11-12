@@ -21,5 +21,5 @@ aead = "0.1"
 aes-gcm-siv = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 bincode = { version = "1.2" }
-signatory-dalek = { path = "../signatory-dalek", features = ["serde"]}
+signatory-dalek = { path = "../signatory-dalek" }
 signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"] }
