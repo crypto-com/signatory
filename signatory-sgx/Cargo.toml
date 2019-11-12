@@ -1,0 +1,25 @@
+[package]
+name        = "signatory-sgx"
+description = "Signatory ECDSA (NIST P-256) and Ed25519 provider for *sgx*"
+version     = "0.16.0" # Also update html_root_url in lib.rs when bumping this
+license     = "Apache-2.0 OR MIT"
+authors     = ["Linfeng Yuan <linfeng@crypto.com>"]
+homepage    = "https://github.com/crypto-com/signatory"
+repository  = "https://github.com/crypto-com/signatory/tree/develop/providers/signatory-sgx/"
+readme      = "README.md"
+categories  = ["authentication", "cryptography", "no-std"]
+keywords    = ["cryptography", "ecdsa", "ed25519", "ring", "signatures", "sgx"]
+edition     = "2018"
+
+
+[dependencies]
+#chrono = "0.4.9"
+sgx-isa = { version = "0.2", features = ["sgxstd"] }
+rand = "0.6.4"
+#mbedtls = {version="0.3.0", default-features = false, features = ["sgx"]}
+aead = "0.1"
+aes-gcm-siv = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+bincode = { version = "1.2" }
+signatory-dalek = { path = "../signatory-dalek", features = ["serde"]}
+signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"] }
