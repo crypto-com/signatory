@@ -4,7 +4,7 @@ use sgx_isa::Report;
 use sgx_isa::{Attributes, Miscselect};
 use sgx_isa::{Keyname, Keypolicy, Keyrequest};
 use serde::{de, Serialize, Deserialize, Serializer, Deserializer};
-use signatory::signature::Error;
+use crate::error::Error;
 
 #[derive(Debug, Clone, PartialEq)]
 struct  SealAttributes(Attributes);
@@ -118,8 +118,8 @@ fn egetkey(label: Label, seal_data: &SealData)
         keyid: keyid,
         miscmask: !0,
         ..Default::default()
-    }.egetkey().map_err(|_e| {
-        Error::new()
+    }.egetkey().map_err(|e| {
+        Error::new(format!("get egetkey failed with error: {:?}", e))
     })
 }
 
@@ -174,7 +174,7 @@ pub fn unseal_key(label: Label, seal_data: &SealData)
     if report.attributes != *seal_data.attributes.as_ref()
         || report.miscselect != *seal_data.miscselect.as_ref()
     {
-        return Err(Error::new())
+        return Err(Error::new("seal data not match"))
     }
 
     egetkey(label, &seal_data)

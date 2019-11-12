@@ -23,3 +23,5 @@ serde = { version = "1.0", features = ["derive"] }
 bincode = { version = "1.2" }
 signatory-dalek = { path = "../signatory-dalek" }
 signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"] }
+#rustls =  {version = "0.16", features = ["dangerous_configuration"]}
+

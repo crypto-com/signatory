@@ -3,8 +3,8 @@ use aes_gcm_siv::Aes128GcmSiv;
 use serde::{Serialize, Deserialize};
 use signatory::ed25519;
 use signatory_dalek::Ed25519Signer;
-use signatory::signature::Error;
 use signatory::public_key::PublicKeyed;
+use crate::error::Error;
 use crate::seal_data::{Label, SealData, seal_key, unseal_key};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -22,8 +22,8 @@ impl SealedSigner{
         let (eget_key, seal_data) = seal_key(label);
         let aead = get_algo(&eget_key);
         let nonce = GenericArray::from_slice(&seal_data.nonce);
-        let sealed_seed = aead.encrypt(nonce, raw_seed).map_err(|_e| {
-            Error::new()
+        let sealed_seed = aead.encrypt(nonce, raw_seed).map_err(|e| {
+            Error::new(format!("encrypt seed failed with error: {:?}", e))
         })?;
 
         let s = Self {
@@ -38,32 +38,34 @@ impl SealedSigner{
         let seal_key = unseal_key(self.label, &self.seal_data)?;
         let nonce = GenericArray::from_slice(&self.seal_data.nonce);
         let aead = get_algo(&seal_key);
-        let raw_seed = aead.decrypt(nonce, self.sealed_seed.as_ref()).map_err(|_e| {
-            Error::new()
+        let raw_seed = aead.decrypt(nonce, self.sealed_seed.as_ref()).map_err(|e| {
+            Error::new(format!("get signer failed with error: {:?}", e))
         })?;
         if let Some(signer) = ed25519::Seed::from_bytes(raw_seed).map(|seed| Ed25519Signer::from(&seed)) {
             Ok(signer)
         } else {
-            Err(Error::new())
+            Err(Error::new("get signer failed"))
         }
     }
 
     pub fn get_public_key(&self) -> Result<ed25519::PublicKey, Error> {
         let signer = self.get_signer()?;
-        signer.public_key()
+        signer.public_key().map_err(|e|{
+            Error::new(format!("get public key failed with error: {:?}", e))
+        })
     }
 
     pub fn encode(&self) -> Result<Vec<u8>, Error> {
         bincode::serialize(self)
             .map_err(|e| {
-                Error::from_source(e)
+                Error::new(format!("serialize seal signer failed with error: {:?}", e))
             })
     }
 
     pub fn decode(encoded: &[u8]) -> Result<Self, Error> {
         bincode::deserialize(encoded)
             .map_err(|e| {
-                Error::from_source(e)
+                Error::new(format!("deserialize seal signer failed with error: {:?}", e))
             })
     }
 }
