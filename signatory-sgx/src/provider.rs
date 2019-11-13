@@ -1,15 +1,18 @@
 use crate::error::Error;
 use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
+use log::debug;
 use std::fs::File;
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::path::Path;
 
 pub fn send(stream: &mut TcpStream, request: Request) -> Result<Response, Error> {
+    debug!("send request {:?}", request);
     let request_rawdata = request.encode()?;
     let _ = stream.write(&request_rawdata)?;
     let mut data = [0_u8; ENCRYPTION_REQUEST_SIZE];
     let _ = stream.read(&mut data)?;
+    debug!("get raw data: {:?}", data.to_vec());
     Response::decode(&data)
 }
 
