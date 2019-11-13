@@ -30,14 +30,17 @@ fn store_keypair<P: AsRef<Path>>(
     secret_key_path: P,
     publick_key_path: P) -> Result<(), Error>{
     let public_key = &key_pair.pubkey;
+    let public_key_str = hex::encode(public_key);
     let mut pubkey_file = File::create(publick_key_path)?;
-    pubkey_file.write_all(&public_key)?;
+    pubkey_file.write_all(&public_key_str.as_bytes())?;
 
     // can not use the old secret_key path
     if secret_key_path.as_ref().exists() {
-       return Err(Error::new("secret key path already exist"))
+       return Err(Error::new(format!("secret key path {:?} already exist", secret_key_path.as_ref())))
     }
     let mut secret_file = File::create(secret_key_path)?;
-    secret_file.write_all(&key_pair.sealed_privkey.encode()?)?;
+    let secret_raw_data = key_pair.sealed_privkey.encode()?;
+    let secret_str = hex::encode(&secret_raw_data);
+    secret_file.write_all(&secret_str.as_bytes())?;
     Ok(())
 }

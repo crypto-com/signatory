@@ -1,15 +1,17 @@
+mod logger;
 extern crate log;
 extern crate signatory_sgx;
+use log::{info, error};
 use signatory_sgx::provider::create_keypair;
 use std::net::TcpStream;
 
 
-
 fn main() {
+    let _ = logger::init();
     let mut stream = match TcpStream::connect("localhost:8888") {
         Ok(s) => { s },
         Err(e) => {
-            println!("error to connect server: {:?}", e);
+            error!("error to connect server: {:?}", e);
             return
         }
     };
@@ -18,8 +20,8 @@ fn main() {
     let public_key_path = "publick_key";
 
     if let Err(e) = create_keypair(&mut stream, secret_key_path, public_key_path) {
-        println!("create keypair failed with error: {}", e);
+        error!("create keypair failed with error: {}", e);
     } else {
-        println!("create keypaie success, secret key: {}, public key: {}", secret_key_path, public_key_path);
+        info!("create keypair success, secret key: {}, public key: {}", secret_key_path, public_key_path);
     }
 }

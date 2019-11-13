@@ -1,22 +1,34 @@
-use crate::error::Error;
 use crate::protocol::{Decode, Encode};
-use crate::seal_data::{seal_key, unseal_key, Label, SealData};
-use aead::{generic_array::GenericArray, Aead, NewAead};
-use aes_gcm_siv::Aes128GcmSiv;
-use rand::random;
+use crate::seal_data::{Label, SealData};
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "sgx")]
+use crate::error::Error;
+#[cfg(feature = "sgx")]
+use crate::seal_data::{seal_key, unseal_key};
+#[cfg(feature = "sgx")]
+use aead::{generic_array::GenericArray, Aead, NewAead};
+#[cfg(feature = "sgx")]
+use aes_gcm_siv::Aes128GcmSiv;
+#[cfg(feature = "sgx")]
+use rand::random;
+#[cfg(feature = "sgx")]
 use signatory::ed25519;
+#[cfg(feature = "sgx")]
 use signatory::public_key::PublicKeyed;
+#[cfg(feature = "sgx")]
 use signatory::signature::{Signer, Verifier};
+#[cfg(feature = "sgx")]
 use signatory_dalek::{Ed25519Signer, Ed25519Verifier};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SealedSigner {
     sealed_seed: Vec<u8>,
     seal_data: SealData,
     label: Label,
 }
 
+#[cfg(feature = "sgx")]
 impl SealedSigner {
     pub fn new() -> Result<Self, Error> {
         let label: Label = random();
@@ -80,13 +92,14 @@ impl SealedSigner {
 impl Encode for SealedSigner {}
 impl<'de> Decode<'de> for SealedSigner {}
 
+#[cfg(feature = "sgx")]
 fn get_algo(seal_key: &[u8]) -> Aes128GcmSiv {
     let key = GenericArray::clone_from_slice(seal_key);
     let aead = Aes128GcmSiv::new(key);
     aead
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature="sgx"))]
 mod tests {
     use super::*;
 
@@ -100,7 +113,6 @@ mod tests {
 
     #[test]
     fn test_sign() {
-        let label = Label::from([0; 16]);
         let sealed = SealedSigner::new().unwrap();
         // sign message
         let msg = b"hello world";

@@ -14,14 +14,21 @@ edition     = "2018"
 
 [dependencies]
 log = "0.4.8"
-sgx-isa = { version = "0.2", features = ["sgxstd"] }
-rand = "0.6.4"
-aead = "0.1"
-aes-gcm-siv = "0.2"
-serde = { version = "1.0", features = ["derive"] }
 bincode = { version = "1.2" }
-signatory-dalek = { path = "../signatory-dalek" }
-signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"] }
+serde = { version = "1.0", features = ["derive"] }
+sgx-isa = { version = "0.2", features = ["sgxstd"] }
+
+hex = { version = "0.4", optional = true}
+rand = { version = "0.6.4", optional = true }
+aead = {version = "0.1", optional = true }
+aes-gcm-siv = { version = "0.2", optional = true }
+signatory-dalek = { path = "../signatory-dalek", optional = true }
+signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"], optional = true }
+
+[features]
+default = ["std"]
+sgx = ["rand", "aead", "aes-gcm-siv", "signatory-dalek", "signatory"]
+std = ["hex"]
 
 [[bin]]
 name = "server"

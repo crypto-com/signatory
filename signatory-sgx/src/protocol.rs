@@ -6,7 +6,7 @@ pub const ENCRYPTION_REQUEST_SIZE: usize = 1024 * 1; // 60 KB
 
 pub type DataType = Vec<u8>;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
     GenerateKey,
     GetPublicKey(SealedSigner),
@@ -17,7 +17,7 @@ pub enum Request {
 impl Encode for Request {}
 impl<'de> Decode<'de> for Request {}
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Response {
     KeyPair(KeyPair),
     PublicKey(Vec<u8>),
@@ -29,7 +29,7 @@ pub enum Response {
 impl Encode for Response {}
 impl<'de> Decode<'de> for Response {}
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct KeyPair {
     pub sealed_privkey: SealedSigner,
     pub pubkey: Vec<u8>,
