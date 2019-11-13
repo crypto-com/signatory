@@ -44,11 +44,7 @@ pub trait Encode: Serialize {
 
 pub trait Decode<'de>: Deserialize<'de> {
     fn decode(encoded: &'de [u8]) -> Result<Self, Error> {
-        bincode::deserialize(encoded).map_err(|e| {
-            Error::new(format!(
-                "deserialize with error: {:?}",
-                e
-            ))
-        })
+        bincode::deserialize(encoded)
+            .map_err(|e| Error::new(format!("deserialize with error: {:?}", e)))
     }
 }
