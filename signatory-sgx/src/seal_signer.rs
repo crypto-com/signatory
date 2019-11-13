@@ -99,7 +99,7 @@ fn get_algo(seal_key: &[u8]) -> Aes128GcmSiv {
     aead
 }
 
-#[cfg(all(test, feature="sgx"))]
+#[cfg(all(test, feature = "sgx"))]
 mod tests {
     use super::*;
 

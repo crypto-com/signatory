@@ -1,9 +1,9 @@
 use crate::error::Error;
 use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
 use crate::seal_signer::SealedSigner;
+use log::info;
 use std::io::prelude::*;
 use std::net::TcpStream;
-use log::{info, warn};
 
 fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
     let request = Request::decode(raw_data)?;

@@ -1,6 +1,6 @@
 mod logger;
 extern crate signatory_sgx;
-use log::{info, error};
+use log::{error, info};
 use signatory_sgx::backend::serve;
 use std::net::TcpListener;
 use std::time::Duration;
@@ -18,15 +18,15 @@ fn main() {
             Ok(s) => {
                 info!("get connection from {:}", s.peer_addr().unwrap());
                 s
-            },
+            }
             Err(e) => {
                 error!("{:?}", e);
-                continue
+                continue;
             }
         };
         let _ = stream.set_read_timeout(Some(Duration::new(TIMEOUT_SEC, 0)));
         let _ = stream.set_write_timeout(Some(Duration::new(TIMEOUT_SEC, 0)));
-        if let Err(e)  = serve(&mut stream) {
+        if let Err(e) = serve(&mut stream) {
             error!("error to handle request: {:?}", e);
         } else {
             info!("handle request success!");

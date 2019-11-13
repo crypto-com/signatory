@@ -70,7 +70,7 @@ impl<'de> Deserialize<'de> for SealMiscselect {
         D: Deserializer<'de>,
     {
         let bits: u32 = Deserialize::deserialize(deserializer)?;
-        if let Some(misc) = Miscselect::from_bits(bits) {
+        if let Some(misc) = Miscselect::from_bits(bits as _) {
             Ok(SealMiscselect(misc))
         } else {
             Err(de::Error::custom(format!(
