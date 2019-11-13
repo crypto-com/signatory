@@ -1,3 +1,4 @@
+use std::error::Error as StdError;
 use std::{self, fmt};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -30,5 +31,11 @@ impl std::error::Error for Error {
 impl From<&'static str> for Error {
     fn from(s: &'static str) -> Error {
         Error(s.into())
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(s: std::io::Error) -> Error {
+        Error(s.description().into())
     }
 }

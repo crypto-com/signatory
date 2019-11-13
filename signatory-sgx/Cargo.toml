@@ -13,15 +13,21 @@ edition     = "2018"
 
 
 [dependencies]
-#chrono = "0.4.9"
+log = "0.4.8"
 sgx-isa = { version = "0.2", features = ["sgxstd"] }
 rand = "0.6.4"
-#mbedtls = {version="0.3.0", default-features = false, features = ["sgx"]}
 aead = "0.1"
 aes-gcm-siv = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 bincode = { version = "1.2" }
 signatory-dalek = { path = "../signatory-dalek" }
 signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"] }
-#rustls =  {version = "0.16", features = ["dangerous_configuration"]}
+
+[[bin]]
+name = "server"
+path = "bin/server.rs"
+
+[[bin]]
+name = "client"
+path = "bin/client.rs"
 
