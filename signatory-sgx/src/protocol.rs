@@ -37,8 +37,13 @@ pub struct KeyPair {
 
 pub trait Encode: Serialize {
     fn encode(&self) -> Result<Vec<u8>, Error> {
-        bincode::serialize(self)
-            .map_err(|e| Error::new(format!("serialize seal signer failed with error: {:?}", e)))
+        let data = bincode::serialize(self)
+            .map_err(|e| Error::new(format!("serialize seal signer failed with error: {:?}", e)))?;
+        if data.len() > ENCRYPTION_REQUEST_SIZE {
+           Err(Error::new("encoded data too large"))
+        } else {
+            Ok(data)
+        }
     }
 }
 

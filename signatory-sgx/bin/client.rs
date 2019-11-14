@@ -1,5 +1,5 @@
 extern crate signatory_sgx;
-use log::{error, info};
+use log::error;
 use signatory_sgx::error::Error;
 use signatory_sgx::provider::{create_keypair, get_pubkey};
 use std::fs;
@@ -55,8 +55,7 @@ impl CMD {
                 // read secret_str from the secret file
                 let secret_str = fs::read_to_string(secret_file)?;
                 let pubkey_str = get_pubkey(&mut stream, &secret_str)?;
-                println!("public key:");
-                println!("{}", pubkey_str);
+                println!("public key: {}\n", pubkey_str);
                 Ok(())
             }
         }

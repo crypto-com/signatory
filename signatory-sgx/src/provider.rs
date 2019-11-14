@@ -55,10 +55,10 @@ fn store_keypair<P: AsRef<Path>>(
 }
 
 pub fn get_pubkey(stream: &mut TcpStream, secret_str: &str) -> Result<String, Error> {
-    let secret_raw = hex::decode(secret_str).map_err(|e| Error::new("invalid secret string"))?;
+    let secret_raw = hex::decode(secret_str.trim()).map_err(|_e| Error::new("invalid secret string"))?;
     let request = Request::GetPublicKey(SealedSigner::decode(&secret_raw)?);
     let r = send(stream, request)?;
-    println!("response: {:?}", r);
+    debug!("response: {:?}", r);
     if let Response::PublicKey(pubkey_raw) = r {
         let pubkey_str = hex::encode(&pubkey_raw);
         Ok(pubkey_str)
