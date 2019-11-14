@@ -17,7 +17,11 @@ pub enum CMD {
         /// set file path that public key stored
         #[structopt(short, long, default_value = "public_key", parse(from_os_str))]
         public_file: PathBuf,
-    },
+
+        /// set server address
+        #[structopt(short, long, default_value = "127.0.0.1:8888")]
+        address:  String,
+},
 
     /// get public key of a secret key file
     Publickey {
@@ -33,8 +37,9 @@ impl CMD {
             CMD::Keypair {
                 secret_file: secret_key_path,
                 public_file: public_key_path,
+                address,
             } => {
-                let mut stream = match TcpStream::connect("localhost:8888") {
+                let mut stream = match TcpStream::connect(address) {
                     Ok(s) => s,
                     Err(e) => {
                         error!("error to connect server: {:?}", e);
