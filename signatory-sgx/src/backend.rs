@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
 use crate::seal_signer::SealedSigner;
-use log::info;
+use log::{info, debug};
 use std::io::prelude::*;
 use std::net::TcpStream;
 
