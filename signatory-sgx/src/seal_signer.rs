@@ -7,7 +7,7 @@ use crate::error::Error;
 #[cfg(feature = "sgx")]
 use crate::seal_data::{seal_key, unseal_key};
 #[cfg(feature = "sgx")]
-use aead::{generic_array::GenericArray, Aead, NewAead};
+use aead::{generic_array::GenericArray, Aead, NewAead, Payload};
 #[cfg(feature = "sgx")]
 use aes_gcm_siv::Aes128GcmSiv;
 #[cfg(feature = "sgx")]
@@ -36,12 +36,12 @@ impl SealedSigner {
         let label: Label = random();
         let seed = ed25519::Seed::generate();
         let raw_seed = seed.as_secret_slice();
-
+        let payload = Payload{msg: raw_seed, aad: &label};
         let (eget_key, seal_data) = seal_key(label);
         let aead = get_algo(&eget_key);
         let nonce = GenericArray::from_slice(&seal_data.nonce);
         let sealed_seed = aead
-            .encrypt(nonce, raw_seed)
+            .encrypt(nonce, payload)
             .map_err(|e| Error::new(format!("encrypt seed failed with error: {:?}", e)))?;
 
         let s = Self {
@@ -56,8 +56,9 @@ impl SealedSigner {
         let seal_key = unseal_key(self.label, &self.seal_data)?;
         let nonce = GenericArray::from_slice(&self.seal_data.nonce);
         let aead = get_algo(&seal_key);
+        let payload = Payload {msg: self.sealed_seed.as_ref(), aad: &self.label};
         let raw_seed = aead
-            .decrypt(nonce, self.sealed_seed.as_ref())
+            .decrypt(nonce, payload)
             .map_err(|_e| Error::new("get signer failed, the host changed or the program changed"))?;
         if let Some(signer) =
             ed25519::Seed::from_bytes(raw_seed).map(|seed| Ed25519Signer::from(&seed))

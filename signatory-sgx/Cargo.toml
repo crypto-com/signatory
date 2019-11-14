@@ -28,12 +28,12 @@ aes-gcm-siv = { version = "0.2", optional = true }
 signatory-dalek = { path = "../signatory-dalek", optional = true }
 signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"], optional = true }
 
-[[example]]
+[[bin]]
 name = "server"
 path = "example/server.rs"
 test = false
 
-[[example]]
+[[bin]]
 name = "client"
 path = "example/client.rs"
 test = false
