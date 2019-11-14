@@ -17,6 +17,8 @@ use signatory::ed25519;
 #[cfg(feature = "sgx")]
 use signatory::public_key::PublicKeyed;
 #[cfg(feature = "sgx")]
+use signatory::signature::Signature;
+#[cfg(feature = "sgx")]
 use signatory::signature::{Signer, Verifier};
 #[cfg(feature = "sgx")]
 use signatory_dalek::{Ed25519Signer, Ed25519Verifier};
@@ -56,7 +58,7 @@ impl SealedSigner {
         let aead = get_algo(&seal_key);
         let raw_seed = aead
             .decrypt(nonce, self.sealed_seed.as_ref())
-            .map_err(|e| Error::new(format!("get signer failed with error: {:?}", e)))?;
+            .map_err(|_e| Error::new("get signer failed, the host changed or the program changed"))?;
         if let Some(signer) =
             ed25519::Seed::from_bytes(raw_seed).map(|seed| Ed25519Signer::from(&seed))
         {
@@ -66,18 +68,21 @@ impl SealedSigner {
         }
     }
 
-    pub fn try_sign(&self, data: &[u8]) -> Result<ed25519::Signature, Error> {
+    pub fn try_sign(&self, data: &[u8]) -> Result<Vec<u8>, Error> {
         let signer = self.get_signer()?;
-        signer
+        let sig = signer
             .try_sign(data)
-            .map_err(|e| Error::new(format!("sign data with error: {}", e)))
+            .map_err(|e| Error::new(format!("sign data with error: {}", e)))?;
+        Ok(sig.to_bytes().to_vec())
     }
 
-    pub fn verify(&self, msg: &[u8], sig: &ed25519::Signature) -> Result<(), Error> {
-        let publick_key = self.get_public_key()?;
-        let verifier = Ed25519Verifier::from(&publick_key);
+    pub fn verify(&self, msg: &[u8], sig_raw: &[u8]) -> Result<(), Error> {
+        let public_key = self.get_public_key()?;
+        let verifier = Ed25519Verifier::from(&public_key);
+        let sig =
+            ed25519::Signature::from_bytes(sig_raw).map_err(|_| Error::new("invalid signature"))?;
         verifier
-            .verify(msg, sig)
+            .verify(msg, &sig)
             .map_err(|e| Error::new(format!("varify failed with error: {:?}", e)))
     }
 
@@ -116,9 +121,9 @@ mod tests {
         let sealed = SealedSigner::new().unwrap();
         // sign message
         let msg = b"hello world";
-        let sig = sealed.try_sign(msg).unwrap();
+        let sig_raw = sealed.try_sign(msg).unwrap();
         // verify sig
-        assert!(sealed.verify(msg, &sig).is_ok());
+        assert!(sealed.verify(msg, &sig_raw).is_ok());
     }
 
     #[test]

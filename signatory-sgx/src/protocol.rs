@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::seal_signer::SealedSigner;
 use serde::{Deserialize, Serialize};
 
-pub const ENCRYPTION_REQUEST_SIZE: usize = 1024 * 1; // 60 KB
+pub const ENCRYPTION_REQUEST_SIZE: usize = 1024 * 1; // 1 KB
 
 pub type DataType = Vec<u8>;
 
@@ -11,7 +11,6 @@ pub enum Request {
     GenerateKey,
     GetPublicKey(SealedSigner),
     Sign((SealedSigner, DataType)),
-    //    Varify((SealedSigner, DataType)),
 }
 
 impl Encode for Request {}
@@ -22,7 +21,6 @@ pub enum Response {
     KeyPair(KeyPair),
     PublicKey(Vec<u8>),
     Signed(DataType),
-    //    VarifyResult(bool),
     Error(String),
 }
 
@@ -40,7 +38,7 @@ pub trait Encode: Serialize {
         let data = bincode::serialize(self)
             .map_err(|e| Error::new(format!("serialize seal signer failed with error: {:?}", e)))?;
         if data.len() > ENCRYPTION_REQUEST_SIZE {
-           Err(Error::new("encoded data too large"))
+            Err(Error::new("encoded data too large"))
         } else {
             Ok(data)
         }

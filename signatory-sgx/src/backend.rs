@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
 use crate::seal_signer::SealedSigner;
-use log::{info, debug};
+use log::{debug, info};
 use std::io::prelude::*;
 use std::net::TcpStream;
 
@@ -32,7 +32,7 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
         Request::Sign((sealed_signer, raw_data)) => {
             info!("sign data");
             let sig = sealed_signer.try_sign(&raw_data)?;
-            Ok(Response::Signed(sig.to_bytes().to_vec()))
+            Ok(Response::Signed(sig))
         }
     }
 }

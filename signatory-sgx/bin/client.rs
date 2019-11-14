@@ -1,8 +1,7 @@
 extern crate signatory_sgx;
 use log::error;
 use signatory_sgx::error::Error;
-use signatory_sgx::provider::{create_keypair, get_pubkey};
-use std::fs;
+use signatory_sgx::provider::{create_keypair, get_data_from_file, get_pubkey, sign};
 use std::net::TcpStream;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -34,6 +33,19 @@ pub enum CMD {
         #[structopt(short, long, default_value = "127.0.0.1:8888")]
         addr: String,
     },
+
+    /// sign a string example
+    Sign {
+        /// secret key file path
+        #[structopt(short, long, default_value = "secret_key", parse(from_os_str))]
+        secret_file: PathBuf,
+        /// set server address
+        #[structopt(short, long, default_value = "127.0.0.1:8888")]
+        addr: String,
+        /// sign data
+        #[structopt(short, long, default_value = "hello world")]
+        data: String,
+    },
 }
 
 impl CMD {
@@ -49,13 +61,27 @@ impl CMD {
                 create_keypair(&mut stream, secret_file, public_file)?;
                 Ok(())
             }
-            // get public key of a secret file
+            // get public key from a secret file
             CMD::Publickey { secret_file, addr } => {
                 let mut stream = TcpStream::connect(addr)?;
                 // read secret_str from the secret file
-                let secret_str = fs::read_to_string(secret_file)?;
-                let pubkey_str = get_pubkey(&mut stream, &secret_str)?;
+                let secret_raw = get_data_from_file(secret_file)?;
+                let pubkey_raw = get_pubkey(&mut stream, &secret_raw)?;
+                let pubkey_str = hex::encode(pubkey_raw);
                 println!("public key: {}\n", pubkey_str);
+                Ok(())
+            }
+            // sign a string
+            CMD::Sign {
+                secret_file,
+                addr,
+                data,
+            } => {
+                let mut stream = TcpStream::connect(addr)?;
+                let secret_raw = get_data_from_file(secret_file)?;
+                let data_raw: Vec<u8> = data.clone().into_bytes();
+                let signed_result = sign(&mut stream, &secret_raw, data_raw)?;
+                println!("signed result: {:?}", signed_result);
                 Ok(())
             }
         }

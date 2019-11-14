@@ -152,7 +152,6 @@ pub fn seal_key(label: Label) -> (EgetKey, SealData) {
 
     // EGETKEY should never error here because we used the
     // information from `Report::for_self`.
-    // TODO: remove unwrap
     (egetkey(label, &seal_data).unwrap(), seal_data)
 }
 
