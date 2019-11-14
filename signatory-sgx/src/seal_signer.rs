@@ -21,7 +21,7 @@ use signatory::signature::{Signer, Verifier};
 #[cfg(feature = "sgx")]
 use signatory_dalek::{Ed25519Signer, Ed25519Verifier};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct SealedSigner {
     sealed_seed: Vec<u8>,
     seal_data: SealData,
@@ -119,5 +119,12 @@ mod tests {
         let sig = sealed.try_sign(msg).unwrap();
         // verify sig
         assert!(sealed.verify(msg, &sig).is_ok());
+    }
+
+    #[test]
+    fn test_get_pubkey() {
+        let sealed = SealedSigner::new().unwrap();
+        let pubkey = sealed.get_public_key();
+        assert!(pubkey.is_ok());
     }
 }

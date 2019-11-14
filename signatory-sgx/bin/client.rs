@@ -1,6 +1,8 @@
 extern crate signatory_sgx;
 use log::{error, info};
-use signatory_sgx::provider::create_keypair;
+use signatory_sgx::error::Error;
+use signatory_sgx::provider::{create_keypair, get_pubkey};
+use std::fs;
 use std::net::TcpStream;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -20,48 +22,42 @@ pub enum CMD {
 
         /// set server address
         #[structopt(short, long, default_value = "127.0.0.1:8888")]
-        address:  String,
-},
+        addr: String,
+    },
 
     /// get public key of a secret key file
     Publickey {
         /// secret key file path
         #[structopt(short, long, default_value = "secret_key", parse(from_os_str))]
         secret_file: PathBuf,
+        /// set server address
+        #[structopt(short, long, default_value = "127.0.0.1:8888")]
+        addr: String,
     },
 }
 
 impl CMD {
-    pub fn execute(&self) {
+    pub fn execute(&self) -> Result<(), Error> {
         match self {
+            // generate key pair
             CMD::Keypair {
-                secret_file: secret_key_path,
-                public_file: public_key_path,
-                address,
+                secret_file,
+                public_file,
+                addr,
             } => {
-                let mut stream = match TcpStream::connect(address) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        error!("error to connect server: {:?}", e);
-                        return;
-                    }
-                };
-                if let Err(e) = create_keypair(&mut stream, secret_key_path, public_key_path) {
-                    error!("create keypair failed with error: {}", e);
-                } else {
-                    info!(
-                        "create keypair success, secret key: {:?}, public key: {:?}",
-                        secret_key_path, public_key_path
-                    );
-                }
+                let mut stream = TcpStream::connect(addr)?;
+                create_keypair(&mut stream, secret_file, public_file)?;
+                Ok(())
             }
-            CMD::Publickey {
-                secret_file: secret_file_path,
-            } => {
-                println!(
-                    "TODO: will to get public key for secret file {:?}",
-                    secret_file_path
-                );
+            // get public key of a secret file
+            CMD::Publickey { secret_file, addr } => {
+                let mut stream = TcpStream::connect(addr)?;
+                // read secret_str from the secret file
+                let secret_str = fs::read_to_string(secret_file)?;
+                let pubkey_str = get_pubkey(&mut stream, &secret_str)?;
+                println!("public key:");
+                println!("{}", pubkey_str);
+                Ok(())
             }
         }
     }
@@ -70,5 +66,7 @@ impl CMD {
 fn main() {
     env_logger::init();
     let cmd = CMD::from_args();
-    cmd.execute()
+    if let Err(e) = cmd.execute() {
+        error!("{}", e);
+    }
 }

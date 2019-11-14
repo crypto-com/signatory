@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
+use crate::seal_signer::SealedSigner;
 use log::debug;
 use std::fs::File;
 use std::io::prelude::*;
@@ -51,4 +52,17 @@ fn store_keypair<P: AsRef<Path>>(
     let secret_str = hex::encode(&secret_raw_data);
     secret_file.write_all(&secret_str.as_bytes())?;
     Ok(())
+}
+
+pub fn get_pubkey(stream: &mut TcpStream, secret_str: &str) -> Result<String, Error> {
+    let secret_raw = hex::decode(secret_str).map_err(|e| Error::new("invalid secret string"))?;
+    let request = Request::GetPublicKey(SealedSigner::decode(&secret_raw)?);
+    let r = send(stream, request)?;
+    println!("response: {:?}", r);
+    if let Response::PublicKey(pubkey_raw) = r {
+        let pubkey_str = hex::encode(&pubkey_raw);
+        Ok(pubkey_str)
+    } else {
+        return Err(Error::new("response error"));
+    }
 }

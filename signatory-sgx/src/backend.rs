@@ -6,11 +6,14 @@ use std::io::prelude::*;
 use std::net::TcpStream;
 
 fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
-    let request = Request::decode(raw_data)?;
+    debug!("handle raw data: {:?}", raw_data);
+    let request =
+        Request::decode(raw_data).map_err(|e| Error::new(format!("invalid request: {:?}", e)))?;
     match request {
         Request::GenerateKey => {
             info!("generate keypair");
             let sealed_privkey = SealedSigner::new()?;
+            debug!("sealed signer: {:?}", sealed_privkey);
             let pubkey = sealed_privkey.get_public_key()?;
             let raw_pubkey = pubkey.into_bytes().to_vec();
             let key_pair = KeyPair {
@@ -21,6 +24,7 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
         }
         Request::GetPublicKey(sealed_signer) => {
             info!("get public key");
+            debug!("get sealed signer: {:?}", sealed_signer);
             let pubkey = sealed_signer.get_public_key()?;
             let raw_pubkey = pubkey.into_bytes().to_vec();
             Ok(Response::PublicKey(raw_pubkey))
@@ -36,16 +40,9 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
 pub fn serve(stream: &mut TcpStream) -> Result<(), Error> {
     let mut buff = vec![0; ENCRYPTION_REQUEST_SIZE];
     let _ = stream.read(&mut buff)?;
-    match handle_request(&buff) {
-        Ok(response) => {
-            let data = response.encode()?;
-            let _ = stream.write(&data)?;
-        }
-        Err(e) => {
-            let response = Response::Error(format!("error to handle request: {:?}", e));
-            let data = response.encode()?;
-            let _ = stream.write(&data)?;
-        }
-    };
+    let response = handle_request(&buff)?;
+    debug!("send response to client: {:?}", response);
+    let data = response.encode()?;
+    let _ = stream.write(&data)?;
     Ok(())
 }
