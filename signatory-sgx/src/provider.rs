@@ -86,7 +86,7 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
         let request = Request::GenerateKey;
         let response = self.send(request)?;
         match response {
-            Response::KeyPair(keypair) => Ok(pubkey_raw),
+            Response::KeyPair(keypair) => Ok(()),
             Response::Error(s) => Err(Error::new(s)),
             _ => Err(Error::new("response error")),
         }
