@@ -120,7 +120,7 @@ fn egetkey(label: Label, seal_data: &SealData) -> Result<EgetKey, Error> {
         isvsvn: seal_data.isvsvn,
         cpusvn: seal_data.cpusvn,
         attributemask: [!0; 2],
-        keyid: keyid,
+        keyid,
         miscmask: !0,
         ..Default::default()
     }

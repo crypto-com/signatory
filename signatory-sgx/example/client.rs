@@ -1,8 +1,9 @@
 extern crate signatory_sgx;
 use log::error;
+use signatory::public_key::PublicKeyed;
+use signatory::signature::Signer;
 use signatory_sgx::error::Error;
-use signatory_sgx::provider::{create_keypair, get_data_from_file, get_pubkey, sign};
-use std::net::TcpStream;
+use signatory_sgx::provider::SgxSigner;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -14,10 +15,6 @@ pub enum CMD {
         /// set file path that secret key stored
         #[structopt(short, long, default_value = "secret_key", parse(from_os_str))]
         secret_file: PathBuf,
-
-        /// set file path that public key stored
-        #[structopt(short, long, default_value = "public_key", parse(from_os_str))]
-        public_file: PathBuf,
 
         /// set server address
         #[structopt(short, long, default_value = "127.0.0.1:8888")]
@@ -52,22 +49,16 @@ impl CMD {
     pub fn execute(&self) -> Result<(), Error> {
         match self {
             // generate key pair
-            CMD::Keypair {
-                secret_file,
-                public_file,
-                addr,
-            } => {
-                let mut stream = TcpStream::connect(addr)?;
-                create_keypair(&mut stream, secret_file, public_file)?;
+            CMD::Keypair { secret_file, addr } => {
+                let signer = SgxSigner::new(addr, secret_file);
+                signer.create_keypair()?;
                 Ok(())
             }
             // get public key from a secret file
             CMD::Publickey { secret_file, addr } => {
-                let mut stream = TcpStream::connect(addr)?;
-                // read secret_str from the secret file
-                let secret_raw = get_data_from_file(secret_file)?;
-                let pubkey_raw = get_pubkey(&mut stream, &secret_raw)?;
-                let pubkey_str = hex::encode(pubkey_raw);
+                let signer = SgxSigner::new(addr, secret_file);
+                let pubkey = signer.public_key().unwrap();
+                let pubkey_str = hex::encode(pubkey.as_bytes());
                 println!("public key: {}\n", pubkey_str);
                 Ok(())
             }
@@ -77,10 +68,9 @@ impl CMD {
                 addr,
                 data,
             } => {
-                let mut stream = TcpStream::connect(addr)?;
-                let secret_raw = get_data_from_file(secret_file)?;
+                let signer = SgxSigner::new(addr, secret_file);
                 let data_raw: Vec<u8> = data.clone().into_bytes();
-                let signed_result = sign(&mut stream, &secret_raw, data_raw)?;
+                let signed_result = signer.try_sign(&data_raw).unwrap();
                 println!("signed result: {:?}", signed_result);
                 Ok(())
             }
