@@ -1,6 +1,6 @@
 [package]
 name        = "signatory-sgx"
-description = "Signatory ECDSA (NIST P-256) and Ed25519 provider for *sgx*"
+description = "Signatory Ed25519 provider for *sgx*"
 version     = "0.16.0" # Also update html_root_url in lib.rs when bumping this
 license     = "Apache-2.0 OR MIT"
 authors     = ["Linfeng Yuan <linfeng@crypto.com>"]
@@ -8,7 +8,7 @@ homepage    = "https://github.com/crypto-com/signatory"
 repository  = "https://github.com/crypto-com/signatory/tree/develop/providers/signatory-sgx/"
 readme      = "README.md"
 categories  = ["authentication", "cryptography", "no-std"]
-keywords    = ["cryptography", "ecdsa", "ed25519", "ring", "signatures", "sgx"]
+keywords    = ["cryptography", "ed25519", "ring", "signatures", "sgx", "enclave"]
 edition     = "2018"
 
 
