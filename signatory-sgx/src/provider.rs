@@ -72,12 +72,23 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
         Ok(signer)
     }
 
+    pub fn ping(&self) -> Result<(), Error> {
+        let request = Request::Ping;
+        let response = self.send(request)?;
+        match response {
+            Response::Pong => Ok(()),
+            Response::Error(s) => Err(Error::new(s)),
+            _ => Err(Error::new("response invalid")),
+        }
+    }
+
     pub fn create_keypair(&self) -> Result<(), Error> {
         let request = Request::GenerateKey;
-        if let Response::KeyPair(keypair) = self.send(request)? {
-            self.store_key(&keypair)
-        } else {
-            Err(Error::new("response error"))
+        let response = self.send(request)?;
+        match response {
+            Response::KeyPair(keypair) => Ok(pubkey_raw),
+            Response::Error(s) => Err(Error::new(s)),
+            _ => Err(Error::new("response error")),
         }
     }
 

@@ -10,6 +10,10 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
     let request =
         Request::decode(raw_data).map_err(|e| Error::new(format!("invalid request: {:?}", e)))?;
     match request {
+        Request::Ping => {
+            info!("get ping, return pong");
+            Ok(Response::Pong)
+        }
         Request::GenerateKey => {
             info!("generate keypair");
             let sealed_privkey = SealedSigner::new()?;

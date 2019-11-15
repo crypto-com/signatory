@@ -8,6 +8,7 @@ pub type DataType = Vec<u8>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
+    Ping,
     GenerateKey,
     GetPublicKey(SealedSigner),
     Sign((SealedSigner, DataType)),
@@ -18,6 +19,7 @@ impl<'de> Decode<'de> for Request {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Response {
+    Pong,
     KeyPair(KeyPair),
     PublicKey(Vec<u8>),
     Signed(DataType),
