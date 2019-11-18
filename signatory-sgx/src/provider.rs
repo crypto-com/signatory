@@ -56,6 +56,7 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
         Response::decode(&data)
     }
 
+    #[inline]
     fn store_key(&self, key_pair: &KeyPair) -> Result<(), Error> {
         // dangerous to use the old secret_key path
         if self.sealed_signer_path.as_ref().exists() {
@@ -86,7 +87,7 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
         let request = Request::GenerateKey;
         let response = self.send(request)?;
         match response {
-            Response::KeyPair(keypair) => Ok(()),
+            Response::KeyPair(keypair) => self.store_key(&keypair),
             Response::Error(s) => Err(Error::new(s)),
             _ => Err(Error::new("response error")),
         }
