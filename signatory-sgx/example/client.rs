@@ -3,9 +3,11 @@ use log::error;
 use signatory::public_key::PublicKeyed;
 use signatory::signature::Signer;
 use signatory_sgx::error::Error;
+use signatory_sgx::provider::SecretKeyEncoding;
 use signatory_sgx::provider::SgxSigner;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use subtle_encoding::encoding::Encoding;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "client", about = "client for sgx server")]
@@ -58,8 +60,9 @@ impl CMD {
             CMD::Publickey { secret_file, addr } => {
                 let signer = SgxSigner::new(addr, secret_file);
                 let pubkey = signer.public_key().unwrap();
-                let pubkey_str = hex::encode(pubkey.as_bytes());
-                println!("public key: {}\n", pubkey_str);
+                let encoder = SecretKeyEncoding::default();
+                let pubkey_str = encoder.encode_to_string(pubkey.as_bytes()).unwrap();
+                println!("public key: {}", pubkey_str);
                 Ok(())
             }
             // sign a string

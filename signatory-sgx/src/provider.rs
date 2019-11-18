@@ -5,24 +5,28 @@ use log::debug;
 use signatory::ed25519;
 use signatory::public_key::PublicKeyed;
 use signatory::signature::{Error as SigError, Signature, Signer};
-use std::fs::{self, File};
 use std::io::prelude::*;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::Path;
+use subtle_encoding::encoding::Encoding;
+
+pub type SecretKeyEncoding = subtle_encoding::Base64;
 
 #[inline]
 pub fn store_data_to_file<P: AsRef<Path>>(data: &[u8], file_path: P) -> Result<(), Error> {
-    let mut file = File::create(file_path)?;
-    let data_str = hex::encode(data);
-    file.write_all(data_str.as_bytes())?;
+    let encoder = SecretKeyEncoding::default();
+    encoder
+        .encode_to_file(data, file_path)
+        .map_err(|e| Error::new(format!("encode to file failed: {:?}", e)))?;
     Ok(())
 }
 
 #[inline]
 pub fn get_data_from_file<P: AsRef<Path>>(file_path: P) -> Result<Vec<u8>, Error> {
-    let data_str = fs::read_to_string(file_path)?;
-    let data_raw =
-        hex::decode(data_str.trim()).map_err(|_e| Error::new("error to decode content in file"))?;
+    let encoder = SecretKeyEncoding::default();
+    let data_raw = encoder
+        .decode_from_file(file_path)
+        .map_err(|e| Error::new(format!("decode from file failed: {:?}", e)))?;
     Ok(data_raw)
 }
 
