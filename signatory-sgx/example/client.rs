@@ -3,7 +3,7 @@ use log::error;
 use signatory::public_key::PublicKeyed;
 use signatory::signature::Signer;
 use signatory_sgx::error::Error;
-use signatory_sgx::provider::SecretKeyEncoding;
+use signatory_sgx::protocol::{KeyType, SecretKeyEncoding};
 use signatory_sgx::provider::SgxSigner;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -18,6 +18,21 @@ pub enum CMD {
         #[structopt(short, long, default_value = "secret_key", parse(from_os_str))]
         secret_file: PathBuf,
 
+        /// set server address
+        #[structopt(short, long, default_value = "127.0.0.1:8888")]
+        addr: String,
+    },
+    /// create a new secret key and public key
+    Import {
+        /// set file path that sgx-secret key stored
+        #[structopt(short, long, default_value = "secret_key", parse(from_os_str))]
+        secret_file: PathBuf,
+        /// set the secret key
+        #[structopt(short, long)]
+        key: String,
+        /// set the secret key type(base64)
+        #[structopt(long, default_value = "base64")]
+        key_type: String,
         /// set server address
         #[structopt(short, long, default_value = "127.0.0.1:8888")]
         addr: String,
@@ -54,6 +69,18 @@ impl CMD {
             CMD::Keypair { secret_file, addr } => {
                 let signer = SgxSigner::new(addr, secret_file);
                 signer.create_keypair()?;
+                Ok(())
+            }
+            CMD::Import{secret_file, key, key_type, addr} => {
+                let signer = SgxSigner::new(addr, secret_file);
+                let ktype: KeyType;
+                if key_type == "base64" {
+                    ktype = KeyType::Base64;
+                } else {
+                    return Err(Error::new("error key_type"))
+                }
+                signer.import(ktype, key)?;
+                println!("import success");
                 Ok(())
             }
             // get public key from a secret file

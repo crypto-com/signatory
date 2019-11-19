@@ -5,12 +5,19 @@ use serde::{Deserialize, Serialize};
 pub const ENCRYPTION_REQUEST_SIZE: usize = 1024 * 1; // 1 KB
 
 pub type DataType = Vec<u8>;
+#[cfg(feature = "std")]
+pub type SecretKeyEncoding = subtle_encoding::Base64;
+
+pub enum KeyType {
+    Base64,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
     Ping,
     GenerateKey,
     GetPublicKey(SealedSigner),
+    Import(Vec<u8>), // return Response::KeyPair
     Sign((SealedSigner, DataType)),
 }
 
