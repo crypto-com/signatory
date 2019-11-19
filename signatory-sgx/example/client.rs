@@ -22,7 +22,7 @@ pub enum CMD {
         #[structopt(short, long, default_value = "127.0.0.1:8888")]
         addr: String,
     },
-    /// create a new secret key and public key
+    /// import a secret key into sgx
     Import {
         /// set file path that sgx-secret key stored
         #[structopt(short, long, default_value = "secret_key", parse(from_os_str))]
@@ -71,6 +71,7 @@ impl CMD {
                 signer.create_keypair()?;
                 Ok(())
             }
+            // import a secret key
             CMD::Import{secret_file, key, key_type, addr} => {
                 let signer = SgxSigner::new(addr, secret_file);
                 let ktype: KeyType;
