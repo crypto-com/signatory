@@ -72,13 +72,18 @@ impl CMD {
                 Ok(())
             }
             // import a secret key
-            CMD::Import{secret_file, key, key_type, addr} => {
+            CMD::Import {
+                secret_file,
+                key,
+                key_type,
+                addr,
+            } => {
                 let signer = SgxSigner::new(addr, secret_file);
                 let ktype: KeyType;
                 if key_type == "base64" {
                     ktype = KeyType::Base64;
                 } else {
-                    return Err(Error::new("error key_type"))
+                    return Err(Error::new("error key_type"));
                 }
                 signer.import(ktype, key)?;
                 println!("import success");

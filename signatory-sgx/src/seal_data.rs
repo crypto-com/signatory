@@ -116,7 +116,7 @@ fn egetkey(label: Label, seal_data: &SealData) -> Result<EgetKey, Error> {
 
     Keyrequest {
         keyname: Keyname::Seal as _,
-        keypolicy: Keypolicy::MRENCLAVE,
+        keypolicy: Keypolicy::MRSIGNER,
         isvsvn: seal_data.isvsvn,
         cpusvn: seal_data.cpusvn,
         attributemask: [!0; 2],
