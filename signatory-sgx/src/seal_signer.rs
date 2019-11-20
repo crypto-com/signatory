@@ -32,9 +32,9 @@ pub struct SealedSigner {
 
 #[cfg(feature = "sgx")]
 impl SealedSigner {
-    pub fn new() -> Result<Self, Error> {
+    fn create(seed: Option<ed25519::Seed>) -> Result<Self, Error> {
+        let seed = seed.unwrap_or(ed25519::Seed::generate());
         let label: Label = random();
-        let seed = ed25519::Seed::generate();
         let raw_seed = seed.as_secret_slice();
         let payload = Payload {
             msg: raw_seed,
@@ -53,6 +53,18 @@ impl SealedSigner {
             label,
         };
         Ok(s)
+    }
+
+    pub fn new() -> Result<Self, Error> {
+        Self::create(None)
+    }
+
+    pub fn import(key_pair: Vec<u8>) -> Result<Self, Error> {
+        let seed = ed25519::Seed::from_keypair(&key_pair);
+        if seed.is_none() {
+            return Err(Error::new("invalid key pair"));
+        }
+        Self::create(Some(seed.unwrap()))
     }
 
     fn get_signer(&self) -> Result<Ed25519Signer, Error> {

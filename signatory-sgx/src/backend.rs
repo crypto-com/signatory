@@ -1,5 +1,7 @@
 use crate::error::Error;
-use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
+use crate::protocol::{
+    Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE,
+};
 use crate::seal_signer::SealedSigner;
 use log::{debug, info};
 use std::io::prelude::*;
@@ -17,6 +19,18 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
         Request::GenerateKey => {
             info!("generate keypair");
             let sealed_privkey = SealedSigner::new()?;
+            debug!("sealed signer: {:?}", sealed_privkey);
+            let pubkey = sealed_privkey.get_public_key()?;
+            let raw_pubkey = pubkey.into_bytes().to_vec();
+            let key_pair = KeyPair {
+                sealed_privkey,
+                pubkey: raw_pubkey,
+            };
+            Ok(Response::KeyPair(key_pair))
+        }
+        Request::Import(raw_key_pair) => {
+            info!("import key");
+            let sealed_privkey = SealedSigner::import(raw_key_pair)?;
             debug!("sealed signer: {:?}", sealed_privkey);
             let pubkey = sealed_privkey.get_public_key()?;
             let raw_pubkey = pubkey.into_bytes().to_vec();

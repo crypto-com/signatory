@@ -18,11 +18,14 @@ bincode = { version = "1.2" }
 serde = { version = "1.0", features = ["derive"] }
 sgx-isa = { version = "0.2", features = ["sgxstd"] }
 
-hex = { version = "0.4", optional = true}
+# privider
+subtle-encoding = { version = "0.5", optional = true }
 structopt = { version = "0.3", optional = true }
 env_logger = { version = "0.7", optional = true }
 signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"] }
 
+
+# backend
 rand = { version = "0.6.4", optional = true }
 aead = {version = "0.1", optional = true }
 aes-gcm-siv = { version = "0.2", optional = true }
@@ -41,5 +44,5 @@ test = false
 [features]
 default = ["std"]
 sgx = ["rand", "aead", "aes-gcm-siv", "signatory-dalek"]
-std = ["hex", "structopt", "env_logger"]
+std = ["subtle-encoding", "structopt", "env_logger"]
 

@@ -1,28 +1,32 @@
 use crate::error::Error;
-use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
+use crate::protocol::{
+    Decode, Encode, KeyPair, KeyType, Request, Response, SecretKeyEncoding, ENCRYPTION_REQUEST_SIZE,
+};
 use crate::seal_signer::SealedSigner;
 use log::debug;
 use signatory::ed25519;
 use signatory::public_key::PublicKeyed;
 use signatory::signature::{Error as SigError, Signature, Signer};
-use std::fs::{self, File};
 use std::io::prelude::*;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::Path;
+use subtle_encoding::encoding::Encoding;
 
 #[inline]
 pub fn store_data_to_file<P: AsRef<Path>>(data: &[u8], file_path: P) -> Result<(), Error> {
-    let mut file = File::create(file_path)?;
-    let data_str = hex::encode(data);
-    file.write_all(data_str.as_bytes())?;
+    let encoder = SecretKeyEncoding::default();
+    encoder
+        .encode_to_file(data, file_path)
+        .map_err(|e| Error::new(format!("encode to file failed: {:?}", e)))?;
     Ok(())
 }
 
 #[inline]
 pub fn get_data_from_file<P: AsRef<Path>>(file_path: P) -> Result<Vec<u8>, Error> {
-    let data_str = fs::read_to_string(file_path)?;
-    let data_raw =
-        hex::decode(data_str.trim()).map_err(|_e| Error::new("error to decode content in file"))?;
+    let encoder = SecretKeyEncoding::default();
+    let data_raw = encoder
+        .decode_from_file(file_path)
+        .map_err(|e| Error::new(format!("decode from file failed: {:?}", e)))?;
     Ok(data_raw)
 }
 
@@ -56,13 +60,23 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
         Response::decode(&data)
     }
 
+    #[inline]
     fn store_key(&self, key_pair: &KeyPair) -> Result<(), Error> {
         // dangerous to use the old secret_key path
         if self.sealed_signer_path.as_ref().exists() {
             return Err(Error::new("secret key path already exist"));
         }
+        // save private key into file
         let secret_raw_data = key_pair.sealed_privkey.encode()?;
-        store_data_to_file(&secret_raw_data, &self.sealed_signer_path)
+        store_data_to_file(&secret_raw_data, &self.sealed_signer_path)?;
+        // print out the pubkey
+        let encoder = SecretKeyEncoding::default();
+        let pubkey_str = encoder.encode_to_string(&key_pair.pubkey).map_err(|e| {
+            Error::new(format!("error to encode raw public key to string: {:?}", e))
+        })?;
+        println!("public key: {}", pubkey_str);
+        // TODO: print original private key, maybe need to backup
+        Ok(())
     }
 
     #[inline]
@@ -86,7 +100,26 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
         let request = Request::GenerateKey;
         let response = self.send(request)?;
         match response {
-            Response::KeyPair(keypair) => Ok(pubkey_raw),
+            Response::KeyPair(keypair) => self.store_key(&keypair),
+            Response::Error(s) => Err(Error::new(s)),
+            _ => Err(Error::new("response error")),
+        }
+    }
+
+    pub fn import(&self, key_type: KeyType, key_str: &str) -> Result<(), Error> {
+        let key_pair_raw = match key_type {
+            KeyType::Base64 => {
+                let encoder = SecretKeyEncoding::default();
+                let raw = encoder
+                    .decode_from_str(key_str)
+                    .map_err(|_| Error::new("invalid key"))?;
+                raw
+            }
+        };
+        let request = Request::Import(key_pair_raw);
+        let response = self.send(request)?;
+        match response {
+            Response::KeyPair(keypair) => self.store_key(&keypair),
             Response::Error(s) => Err(Error::new(s)),
             _ => Err(Error::new("response error")),
         }
@@ -142,5 +175,17 @@ where
         let signature_raw = self.sign_msg(msg).map_err(SigError::from_source)?;
         let signature = ed25519::Signature::from_bytes(&signature_raw[..])?;
         Ok(signature)
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_signature() {
+        let encoder = SecretKeyEncoding::default();
+        let private_key = "OQusjIf/qu00ut9vddhrijgPjcpuyK2aFNFInGfySj+RTda53ilfnC3fOJTNb2AjIrkIL1Lv6YqBBxIoy7tI+g==".to_string();
+        let keypair_raw = encoder.decode_from_str(&private_key).unwrap();
+        assert_eq!(private_raw.len(), 32);
     }
 }
