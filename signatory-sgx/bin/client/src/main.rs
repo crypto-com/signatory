@@ -1,4 +1,3 @@
-extern crate signatory_sgx;
 use log::error;
 use signatory::public_key::PublicKeyed;
 use signatory::signature::Signer;

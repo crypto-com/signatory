@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::seal_signer::SealedSigner;
 use serde::{Deserialize, Serialize};
 
-pub const ENCRYPTION_REQUEST_SIZE: usize = 1024 * 1; // 1 KB
+pub const ENCRYPTION_REQUEST_SIZE: usize = 1024 * 60; // 60 KB
 
 pub type DataType = Vec<u8>;
 #[cfg(feature = "std")]
