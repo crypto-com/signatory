@@ -1,5 +1,7 @@
 use crate::error::Error;
-use crate::protocol::{Decode, Encode, KeyPair, KeyType, Request, Response, SecretKeyEncoding, get_data_from_stream};
+use crate::protocol::{
+    get_data_from_stream, Decode, Encode, KeyPair, KeyType, Request, Response, SecretKeyEncoding,
+};
 use crate::seal_signer::SealedSigner;
 use log::debug;
 use signatory::ed25519;

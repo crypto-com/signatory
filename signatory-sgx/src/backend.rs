@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::protocol::{Decode, Encode, KeyPair, Request, Response, get_data_from_stream};
+use crate::protocol::{get_data_from_stream, Decode, Encode, KeyPair, Request, Response};
 use crate::seal_signer::SealedSigner;
 use log::{debug, info};
 use std::io::prelude::*;
