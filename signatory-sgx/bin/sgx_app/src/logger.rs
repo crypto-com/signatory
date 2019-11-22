@@ -1,3 +1,4 @@
+use chrono::Local;
 use log::{Level, Metadata, Record};
 use log::{LevelFilter, SetLoggerError};
 
@@ -11,7 +12,8 @@ impl log::Log for SimpleLogger {
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             println!(
-                "{} - {}:{} {}",
+                "[{} {}] - {}:{} {}",
+                Local::now().format("%Y-%m-%dT%H:%M:%S"),
                 record.level(),
                 record.file().unwrap_or(""),
                 record.line().unwrap_or(0),

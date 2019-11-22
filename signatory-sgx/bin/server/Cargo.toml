@@ -1,0 +1,15 @@
+[package]
+name = "server"
+version = "0.1.0"
+authors = ["linfeng <linfeng@crypto.com>"]
+edition = "2018"
+
+
+[dependencies]
+log = "0.4.8"
+env_logger = "0.7"
+structopt = "0.3"
+enclave-runner = "0.2"
+sgxs-loaders = "0.2"
+aesm-client = {version = "0.2", features = ["sgxs"] }
+
