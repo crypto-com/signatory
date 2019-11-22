@@ -1,7 +1,5 @@
 use crate::error::Error;
-use crate::protocol::{
-    Decode, Encode, KeyPair, KeyType, Request, Response, SecretKeyEncoding, ENCRYPTION_REQUEST_SIZE,
-};
+use crate::protocol::{Decode, Encode, KeyPair, KeyType, Request, Response, SecretKeyEncoding, get_data_from_stream};
 use crate::seal_signer::SealedSigner;
 use log::debug;
 use signatory::ed25519;
@@ -54,9 +52,7 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
         debug!("send request {:?}", request);
         let request_rawdata = request.encode()?;
         let _ = stream.write(&request_rawdata)?;
-        let mut data = [0_u8; ENCRYPTION_REQUEST_SIZE];
-        let _ = stream.read(&mut data)?;
-        debug!("get raw data: {:?}", data.to_vec());
+        let data = get_data_from_stream(&mut stream)?;
         Response::decode(&data)
     }
 

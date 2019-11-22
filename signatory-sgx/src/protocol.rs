@@ -1,8 +1,8 @@
 use crate::error::Error;
 use crate::seal_signer::SealedSigner;
 use serde::{Deserialize, Serialize};
-
-pub const ENCRYPTION_REQUEST_SIZE: usize = 1024 * 60; // 60 KB
+use std::io::prelude::*;
+use std::net::TcpStream;
 
 pub type DataType = Vec<u8>;
 #[cfg(feature = "std")]
@@ -46,11 +46,11 @@ pub trait Encode: Serialize {
     fn encode(&self) -> Result<Vec<u8>, Error> {
         let data = bincode::serialize(self)
             .map_err(|e| Error::new(format!("serialize seal signer failed with error: {:?}", e)))?;
-        if data.len() > ENCRYPTION_REQUEST_SIZE {
-            Err(Error::new("encoded data too large"))
-        } else {
-            Ok(data)
-        }
+        // the first 8 bits is the length info of the serialized data
+        let len_data: [u8; 8] = data.len().to_le_bytes();
+        let mut result = len_data.to_vec();
+        result.extend_from_slice(&data);
+        Ok(result)
     }
 }
 
@@ -59,4 +59,13 @@ pub trait Decode<'de>: Deserialize<'de> {
         bincode::deserialize(encoded)
             .map_err(|e| Error::new(format!("deserialize with error: {:?}", e)))
     }
+}
+
+pub fn get_data_from_stream(stream: &mut TcpStream) -> Result<Vec<u8>, Error> {
+    let mut len_info = [0_u8; 8];
+    let _ = stream.read(&mut len_info)?;
+    let data_len = usize::from_le_bytes(len_info);
+    let mut data = vec![0_u8; data_len];
+    let _ = stream.read(&mut data)?;
+    Ok(data)
 }

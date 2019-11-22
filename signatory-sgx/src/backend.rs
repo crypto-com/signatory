@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::protocol::{Decode, Encode, KeyPair, Request, Response, ENCRYPTION_REQUEST_SIZE};
+use crate::protocol::{Decode, Encode, KeyPair, Request, Response, get_data_from_stream};
 use crate::seal_signer::SealedSigner;
 use log::{debug, info};
 use std::io::prelude::*;
@@ -54,11 +54,10 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
 }
 
 pub fn serve(stream: &mut TcpStream) -> Result<(), Error> {
-    let mut buff = vec![0; ENCRYPTION_REQUEST_SIZE];
-    let _ = stream.read(&mut buff)?;
-    let response = handle_request(&buff)?;
+    let request_raw_data = get_data_from_stream(stream)?;
+    let response = handle_request(&request_raw_data)?;
     debug!("send response to client: {:?}", response);
-    let data = response.encode()?;
-    let _ = stream.write(&data)?;
+    let response_raw_data = response.encode()?;
+    let _ = stream.write(&response_raw_data)?;
     Ok(())
 }
