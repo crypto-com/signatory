@@ -11,7 +11,7 @@ fn main() {
     if let Err(e) = serve(&mut stream) {
         error!("error to handle request: {:?}", e);
         let _ = Response::Error(e.what().to_string())
-            .encode()
+            .encode(true)
             .map(|data| {
                 let _ = stream.write(&data);
             })
