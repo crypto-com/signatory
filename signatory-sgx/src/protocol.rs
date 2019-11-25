@@ -1,8 +1,7 @@
 use crate::error::Error;
 use crate::seal_signer::SealedSigner;
 use serde::{Deserialize, Serialize};
-use std::io::prelude::*;
-use std::net::TcpStream;
+use std::io::Read;
 
 pub type DataType = Vec<u8>;
 #[cfg(feature = "std")]
@@ -43,14 +42,18 @@ pub struct KeyPair {
 }
 
 pub trait Encode: Serialize {
-    fn encode(&self) -> Result<Vec<u8>, Error> {
+    fn encode(&self, with_len_info: bool) -> Result<Vec<u8>, Error> {
         let data = bincode::serialize(self)
             .map_err(|e| Error::new(format!("serialize seal signer failed with error: {:?}", e)))?;
         // the first 8 bits is the length info of the serialized data
-        let len_data: [u8; 8] = data.len().to_le_bytes();
-        let mut result = len_data.to_vec();
-        result.extend_from_slice(&data);
-        Ok(result)
+        if with_len_info {
+            let len_data: [u8; 8] = data.len().to_le_bytes();
+            let mut result = len_data.to_vec();
+            result.extend_from_slice(&data);
+            Ok(result)
+        } else {
+            Ok(data)
+        }
     }
 }
 
@@ -61,7 +64,7 @@ pub trait Decode<'de>: Deserialize<'de> {
     }
 }
 
-pub fn get_data_from_stream(stream: &mut TcpStream) -> Result<Vec<u8>, Error> {
+pub fn get_data_from_stream<T: Read>(stream: &mut T) -> Result<Vec<u8>, Error> {
     let mut len_info = [0_u8; 8];
     let _ = stream.read(&mut len_info)?;
     let data_len = usize::from_le_bytes(len_info);

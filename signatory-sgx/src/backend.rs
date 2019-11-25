@@ -57,7 +57,7 @@ pub fn serve(stream: &mut TcpStream) -> Result<(), Error> {
     let request_raw_data = get_data_from_stream(stream)?;
     let response = handle_request(&request_raw_data)?;
     debug!("send response to client: {:?}", response);
-    let response_raw_data = response.encode()?;
+    let response_raw_data = response.encode(true)?;
     let _ = stream.write(&response_raw_data)?;
     Ok(())
 }

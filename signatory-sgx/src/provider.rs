@@ -30,6 +30,15 @@ pub fn get_data_from_file<P: AsRef<Path>>(file_path: P) -> Result<Vec<u8>, Error
     Ok(data_raw)
 }
 
+#[inline]
+pub fn convert_data_to_str(raw_data: &[u8]) -> Result<String, Error> {
+    let encoder = SecretKeyEncoding::default();
+    let result = encoder
+        .encode_to_string(raw_data)
+        .map_err(|e| Error::new(format!("encode data to string failed: {:?}", e)))?;
+    Ok(result)
+}
+
 pub struct SgxSigner<S: ToSocketAddrs, P: AsRef<Path>> {
     sgx_server: S,
     sealed_signer_path: P,
@@ -52,7 +61,7 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
     fn send(&self, request: Request) -> Result<Response, Error> {
         let mut stream = self.connect()?;
         debug!("send request {:?}", request);
-        let request_rawdata = request.encode()?;
+        let request_rawdata = request.encode(true)?;
         let _ = stream.write(&request_rawdata)?;
         let data = get_data_from_stream(&mut stream)?;
         Response::decode(&data)
@@ -65,15 +74,11 @@ impl<S: ToSocketAddrs, P: AsRef<Path>> SgxSigner<S, P> {
             return Err(Error::new("secret key path already exist"));
         }
         // save private key into file
-        let secret_raw_data = key_pair.sealed_privkey.encode()?;
+        let secret_raw_data = key_pair.sealed_privkey.encode(false)?;
         store_data_to_file(&secret_raw_data, &self.sealed_signer_path)?;
         // print out the pubkey
-        let encoder = SecretKeyEncoding::default();
-        let pubkey_str = encoder.encode_to_string(&key_pair.pubkey).map_err(|e| {
-            Error::new(format!("error to encode raw public key to string: {:?}", e))
-        })?;
+        let pubkey_str = convert_data_to_str(&key_pair.pubkey)?;
         println!("public key: {}", pubkey_str);
-        // TODO: print original private key, maybe need to backup
         Ok(())
     }
 
@@ -180,10 +185,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_signature() {
-        let encoder = SecretKeyEncoding::default();
-        let private_key = "OQusjIf/qu00ut9vddhrijgPjcpuyK2aFNFInGfySj+RTda53ilfnC3fOJTNb2AjIrkIL1Lv6YqBBxIoy7tI+g==".to_string();
-        let keypair_raw = encoder.decode_from_str(&private_key).unwrap();
-        assert_eq!(private_raw.len(), 32);
+    fn test_store_file() {
+        let a = b"hello world";
+        store_data_to_file(a, "/tmp/a.txt").unwrap();
+        let b = get_data_from_file("/tmp/a.txt").unwrap();
+        assert_eq!(a.to_vec(), b);
     }
 }

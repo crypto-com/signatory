@@ -184,7 +184,7 @@ pub fn unseal_key(label: Label, seal_data: &SealData) -> Result<EgetKey, Error> 
     egetkey(label, &seal_data)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "sgx"))]
 mod tests {
     use super::*;
 
