@@ -11,5 +11,6 @@ env_logger = "0.7"
 structopt = "0.3"
 enclave-runner = "0.2"
 sgxs-loaders = "0.2"
+lazy_static = "1.4"
 aesm-client = {version = "0.2", features = ["sgxs"] }
 
