@@ -8,44 +8,44 @@ use enclave_runner::usercalls::{SyncStream, UsercallExtension};
 use enclave_runner::EnclaveBuilder;
 use log::error;
 use sgxs_loaders::isgx::Device as IsgxDevice;
-use std::cell::RefCell;
 use std::io::Result as IoResult;
-use std::net::TcpStream;
 use std::path::Path;
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Mutex;
 
 /// User call extension allow the enclave code to "connect" to an external service via a customized enclave runner.
-/// Here we customize the runner to intercept calls to connect to an address "cat" which actually connects the enclave application to
-/// stdin and stdout of `cat` process.
+/// Here we customize the runner to intercept calls to connect to an address "sgx" which actually connects the enclave application to
 
 struct SgxServer;
 
-thread_local! {
-    pub static STREAM_CONTAINER: RefCell<Option<TcpStream>> = RefCell::new(None);
+lazy_static! {
+    // sgx get request from SGX_RECEIVER
+    pub static ref SGX_RECEIVER: Mutex<Option<Receiver<Vec<u8>>>> = Mutex::new(None);
+    // sgx send response to SGX_SENDER
+    pub static ref SGX_SENDER: Mutex<Option<Sender<Vec<u8>>>> = Mutex::new(None);
 }
 
 impl SyncStream for SgxServer {
     fn read(&self, buf: &mut [u8]) -> IoResult<usize> {
-        STREAM_CONTAINER.with(|container| {
-            let s = container.borrow();
-            let stream = s.as_ref().unwrap();
-            stream.read(buf)
-        })
+        let c = SGX_RECEIVER.lock().expect("get sgx_recv lock");
+        let receiver = c.as_ref().expect("get receiver failed");
+        let data = receiver.recv().expect("get data from recv failed");
+        buf.copy_from_slice(&data);
+        Ok(data.len())
     }
 
     fn write(&self, buf: &[u8]) -> IoResult<usize> {
-        STREAM_CONTAINER.with(|container| {
-            let s = container.borrow_mut();
-            let stream = s.as_ref().unwrap();
-            stream.write(buf)
-        })
+        let sender = SGX_SENDER.lock().expect("get sender lock");
+        sender
+            .as_ref()
+            .unwrap()
+            .send(buf.to_vec())
+            .expect("send error");
+        Ok(buf.len())
     }
 
     fn flush(&self) -> IoResult<()> {
-        STREAM_CONTAINER.with(|container| {
-            let s = container.borrow_mut();
-            let stream = s.as_ref().unwrap();
-            stream.flush()
-        })
+        Ok(())
     }
 }
 
