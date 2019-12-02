@@ -19,8 +19,13 @@ serde = { version = "1.0", features = ["derive"] }
 sgx-isa = { version = "0.2", features = ["sgxstd"] }
 
 # privider
-subtle-encoding = { version = "0.5", optional = true }
 signatory = { path = "..", default-features = false, features = ["std", "ed25519", "getrandom"] }
+subtle-encoding = { version = "0.5", optional = true }
+enclave-runner = { version = "0.2", optional = true }
+sgxs-loaders = { version = "0.2", optional = true }
+aesm-client = {version = "0.2", features = ["sgxs"] , optional = true }
+crossbeam-channel = { version = "0.4", optional = true}
+
 
 # backend
 rand = { version = "0.6.4", optional = true }
@@ -30,12 +35,11 @@ signatory-dalek = { path = "../signatory-dalek", optional = true }
 
 [workspace]
 members = [
-    "bin/client",
-    "bin/server",
+    "bin/cmd",
     "bin/sgx_app",
 ]
 
 [features]
 default = ["std"]
 sgx = ["rand", "aead", "aes-gcm-siv", "signatory-dalek"]
-std = ["subtle-encoding"]
+std = ["subtle-encoding", "enclave-runner", "sgxs-loaders", "aesm-client", "crossbeam-channel"]

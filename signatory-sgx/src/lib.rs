@@ -6,3 +6,5 @@ pub mod protocol;
 pub mod provider;
 pub mod seal_data;
 pub mod seal_signer;
+#[cfg(feature = "std")]
+pub mod server;

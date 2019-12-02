@@ -1,16 +1,14 @@
 [package]
-name = "server"
+name = "client"
 version = "0.1.0"
 authors = ["linfeng <linfeng@crypto.com>"]
 edition = "2018"
-
 
 [dependencies]
 log = "0.4.8"
 env_logger = "0.7"
 structopt = "0.3"
-enclave-runner = "0.2"
-sgxs-loaders = "0.2"
-lazy_static = "1.4"
-aesm-client = {version = "0.2", features = ["sgxs"] }
-
+subtle-encoding = "0.5"
+crossbeam-channel = "0.4"
+signatory = { path = "../../.."}
+signatory-sgx = { path = "../../../signatory-sgx"}

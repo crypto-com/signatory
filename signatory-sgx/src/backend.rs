@@ -14,7 +14,7 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
             info!("get ping, return pong");
             Ok(Response::Pong)
         }
-        Request::GenerateKey => {
+        Request::KeyGen => {
             info!("generate keypair");
             let sealed_privkey = SealedSigner::new()?;
             debug!("sealed signer: {:?}", sealed_privkey);
@@ -55,6 +55,9 @@ fn handle_request(raw_data: &[u8]) -> Result<Response, Error> {
 
 pub fn serve(stream: &mut TcpStream) -> Result<(), Error> {
     let request_raw_data = get_data_from_stream(stream)?;
+    if request_raw_data.is_empty() {
+        return Err(Error::stop());
+    }
     let response = handle_request(&request_raw_data)?;
     debug!("send response to client: {:?}", response);
     let response_raw_data = response.encode(true)?;
