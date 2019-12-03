@@ -16,12 +16,16 @@ Follow the [fortanix guide](https://edp.fortanix.com/docs/installation/guide/) t
 * Install Fortanix EDP utilities
 
 ## usage
-Please go to the `bin` directory to see how to use it.
+The native format for SGX enclaves is the SGX stream (SGXS) format. Your compiler probably doesn't output binaries in that format, so they must be converted. In addition, your SGX enclaves must be signed. Then, to run your enclave applications, a runner program must be executed with the SGXS and signature as input. In development, these steps are done automatically, and a default runner is provided. For deployment, these steps can and should be customized.
+
+Please go to the `bin` directory to see the details.
 
 ## cargo test
 ```
 cargo +nightly test --features sgx \
 --no-default-features \
 --target x86_64-fortanix-unknown-sgx
+
+cargo +nightly test
 ```
 

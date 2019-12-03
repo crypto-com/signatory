@@ -2,17 +2,12 @@
 This is a example of how to usage signatory-sgx including:
 
 - sgx_app: Fortanix Rust EDP enclave app
-- server: A runner as tcp server that using `user call extention` to run the sgx_app
-- client: a cli command to talk with the server
+- cmd: a cli command to run the sgx_app using `user call extention`
 
 ## build
 ```
-cd client && cargo build --release && cd -
-cd server && cargo +nightly build --release && cd -
-cd sgx_app && cargo +nightly build --target=x86_64-fortanix-unknown-sgx --release
+cd cmd && cargo +nightly build --release && cd -
+cd sgx_app && sh build.sh debug
 ```
-  
-### running server
-Before start the server, you have to convert the sgx_app into SGX stream (SGXS) format, and the SGX enclaves must be signed, see `run_server.sh`.
 
-> note: make sure the `*.sgxs` file and the `*.sig` are in the same directory.
+> note: The runner will look for a signature file ending in `*.sig` next to the `*.sgxs` file, so please put them in the same directory and make their name matched each other.

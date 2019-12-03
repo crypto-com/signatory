@@ -12,7 +12,7 @@ impl log::Log for SimpleLogger {
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             println!(
-                "[{} {}] - {}:{} {}",
+                "[{} {} sgx] - {}:{} {}",
                 Local::now().format("%Y-%m-%dT%H:%M:%S"),
                 record.level(),
                 record.file().unwrap_or(""),

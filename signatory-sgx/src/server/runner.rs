@@ -3,45 +3,54 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+use crate::error::Error;
 use aesm_client::AesmClient;
+use crossbeam_channel::{Receiver, Sender};
 use enclave_runner::usercalls::{SyncStream, UsercallExtension};
 use enclave_runner::EnclaveBuilder;
-use log::error;
+use log;
 use sgxs_loaders::isgx::Device as IsgxDevice;
+use std::cell::RefCell;
 use std::io::Result as IoResult;
 use std::path::Path;
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Mutex;
 
 /// User call extension allow the enclave code to "connect" to an external service via a customized enclave runner.
 /// Here we customize the runner to intercept calls to connect to an address "sgx" which actually connects the enclave application to
 
 struct SgxServer;
 
-lazy_static! {
-    // sgx get request from SGX_RECEIVER
-    pub static ref SGX_RECEIVER: Mutex<Option<Receiver<Vec<u8>>>> = Mutex::new(None);
-    // sgx send response to SGX_SENDER
-    pub static ref SGX_SENDER: Mutex<Option<Sender<Vec<u8>>>> = Mutex::new(None);
+thread_local! {
+    pub static SERVER2SGX_RX: RefCell<Option<Receiver<Vec<u8>>>> = RefCell::new(None);
+    pub static SGX2SERVER_TX: RefCell<Option<Sender<Vec<u8>>>> = RefCell::new(None);
 }
 
 impl SyncStream for SgxServer {
     fn read(&self, buf: &mut [u8]) -> IoResult<usize> {
-        let c = SGX_RECEIVER.lock().expect("get sgx_recv lock");
-        let receiver = c.as_ref().expect("get receiver failed");
-        let data = receiver.recv().expect("get data from recv failed");
-        buf.copy_from_slice(&data);
-        Ok(data.len())
+        log::debug!("read to buffer");
+        SERVER2SGX_RX.with(|rx| {
+            let receiver = rx.borrow();
+            match receiver.as_ref().unwrap().recv() {
+                Ok(data) => {
+                    buf.copy_from_slice(&data);
+                    Ok(data.len())
+                }
+                // return Ok(0) to tell sgx that the stream is finished
+                Err(_e) => Ok(0),
+            }
+        })
     }
 
     fn write(&self, buf: &[u8]) -> IoResult<usize> {
-        let sender = SGX_SENDER.lock().expect("get sender lock");
-        sender
-            .as_ref()
-            .unwrap()
-            .send(buf.to_vec())
-            .expect("send error");
-        Ok(buf.len())
+        log::debug!("write data: {:?}", buf);
+        SGX2SERVER_TX.with(|tx| {
+            let sender = tx.borrow();
+            sender
+                .as_ref()
+                .unwrap()
+                .send(buf[..].to_vec())
+                .expect("send error");
+            Ok(buf.len())
+        })
     }
 
     fn flush(&self) -> IoResult<()> {
@@ -71,21 +80,33 @@ impl UsercallExtension for ExternalService {
     }
 }
 
-pub fn run_sgx<P: AsRef<Path>>(file: P) {
+pub fn run_sgx<P: AsRef<Path>>(
+    file: P,
+    server2sgx_rx: Receiver<Vec<u8>>,
+    sgx2server_tx: Sender<Vec<u8>>,
+) -> Result<(), Error> {
+    log::info!("set global sgx receiver");
+    SERVER2SGX_RX.with(|rx| {
+        *rx.borrow_mut() = Some(server2sgx_rx);
+    });
+    log::info!("set global sgx sender");
+    SGX2SERVER_TX.with(|tx| {
+        *tx.borrow_mut() = Some(sgx2server_tx);
+    });
     let mut device = IsgxDevice::new()
-        .expect("get sgx device failed")
+        .map_err(|_e| "get sgx device error")?
         .einittoken_provider(AesmClient::new())
         .build();
     let mut enclave_builder = EnclaveBuilder::new(file.as_ref());
     enclave_builder
         .coresident_signature()
-        .expect("sign enclave failed");
+        .map_err(|_e| "sign enclave error")?;
     enclave_builder.usercall_extension(ExternalService);
     let enclave = enclave_builder
         .build(&mut device)
-        .expect("get enclave failed");
-    if let Err(e) = enclave.run() {
-        error!("Error while executing SGX enclave:{}", e);
-        std::process::exit(1)
-    }
+        .map_err(|_e| "build enclave error")?;
+    enclave
+        .run()
+        .map_err(|e| format!("run enclave error: {:?}", e))?;
+    Ok(())
 }
