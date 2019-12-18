@@ -94,17 +94,17 @@ pub fn run_sgx<P: AsRef<Path>>(
         *tx.borrow_mut() = Some(sgx2server_tx);
     });
     let mut device = IsgxDevice::new()
-        .map_err(|_e| "get sgx device error")?
+        .map_err(|e| format!("get sgx device error: {:?}", e))?
         .einittoken_provider(AesmClient::new())
         .build();
     let mut enclave_builder = EnclaveBuilder::new(file.as_ref());
     enclave_builder
         .coresident_signature()
-        .map_err(|_e| "sign enclave error")?;
+        .map_err(|e| format!("sign enclave error: {:?}", e))?;
     enclave_builder.usercall_extension(ExternalService);
     let enclave = enclave_builder
         .build(&mut device)
-        .map_err(|_e| "build enclave error")?;
+        .map_err(|e| format!("build enclave error: {:?}", e))?;
     enclave
         .run()
         .map_err(|e| format!("run enclave error: {:?}", e))?;

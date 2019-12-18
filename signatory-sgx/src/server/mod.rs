@@ -14,7 +14,7 @@ pub fn run_server(client2server_rx: Receiver<C2S>, sgx_app_file: PathBuf) -> Res
     log::info!("run sgx enclave");
     let t = thread::spawn(move ||
         if let Err(e) = run_sgx(&sgx_app_file, server2sgx_rx, sgx2server_tx) {
-            log::error!("run sgx error: {:?}", e);
+            log::error!("run sgx error: {:?}", e.what);
         });
     for (tx, data) in client2server_rx {
         // have to send length info and then the data
