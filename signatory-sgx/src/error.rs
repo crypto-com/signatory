@@ -84,7 +84,7 @@ impl From<SendError<Vec<u8>>> for Error {
 impl From<RecvError> for Error {
     fn from(_s: RecvError) -> Error {
         Error {
-            what: "receive data to channel error".into(),
+            what: "receive data from channel error, the enclave service may stopped".into(),
             kind: ErrorKind::Common,
         }
     }

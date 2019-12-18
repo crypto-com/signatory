@@ -12,7 +12,10 @@ pub fn run_server(client2server_rx: Receiver<C2S>, sgx_app_file: PathBuf) -> Res
     let (server2sgx_tx, server2sgx_rx) = unbounded();
     let (sgx2server_tx, sgx2server_rx) = unbounded();
     log::info!("run sgx enclave");
-    let t = thread::spawn(move || run_sgx(&sgx_app_file, server2sgx_rx, sgx2server_tx));
+    let t = thread::spawn(move ||
+        if let Err(e) = run_sgx(&sgx_app_file, server2sgx_rx, sgx2server_tx) {
+            log::error!("run sgx error: {:?}", e);
+        });
     for (tx, data) in client2server_rx {
         // have to send length info and then the data
         server2sgx_tx.send(data[0..8].to_vec())?;
